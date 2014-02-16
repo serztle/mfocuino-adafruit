@@ -1,0 +1,69 @@
+diff --git a/Adafruit_NFCShield_I2C.cpp b/Adafruit_NFCShield_I2C.cpp
+index 1f0a58a..8b7d276 100755
+--- a/Adafruit_NFCShield_I2C.cpp
++++ b/Adafruit_NFCShield_I2C.cpp
+@@ -1224,3 +1224,50 @@ boolean Adafruit_NFCShield_I2C::inListPassiveTarget() {
+ 
+   return true;
+ }
++
++// default timeout of one second
++uint8_t Adafruit_NFCShield_I2C::sendRawCommandCheckAck(uint8_t *raw, uint8_t rawlen, uint16_t timeout) {
++
++  delay(2);     // or whatever the delay is for waking up the board
++
++  // I2C START
++  WIRE.beginTransmission(PN532_I2C_ADDRESS);
++  wiresend(PN532_PREAMBLE);
++  for (uint8_t i=0; i<rawlen; i++) {
++    wiresend(raw[i]);
++  }
++
++  // I2C STOP
++  WIRE.endTransmission();
++
++  if (!waitUntilReady(timeout))
++    return 0xF1;
++
++  // read acknowledgement
++  uint8_t ack[6] = { 0 };
++  wirereaddata(ack, 6);
++  //send ack to uart
++  Serial.write(ack, 6);
++
++  if (!waitUntilReady(timeout))
++    return 0xF2;
++
++  return 0; // ack'd command
++}
++
++void Adafruit_NFCShield_I2C::readRawCommandAnswer(){
++  memset(pn532_packetbuffer,0,sizeof(pn532_packetbuffer));
++  wirereaddata(pn532_packetbuffer, sizeof(pn532_packetbuffer));
++  if((pn532_packetbuffer[0] == 0) && (pn532_packetbuffer[1] == 0)){
++    //packet length is the first byte after 0x00 0x00 0xff
++    Serial.write(pn532_packetbuffer, pn532_packetbuffer[3]+3+4);
++  }else{
++    //hack this should never happen but sometime the first
++    //null byte is missing :(
++    //don't know why i don't receive the first 0x00
++    //packet length is the first byte after 0x00 0x00 0xff
++    Serial.write((uint8_t)0x00);
++    Serial.write(pn532_packetbuffer, sizeof(pn532_packetbuffer));
++  }
++  delay(5);
++}
+diff --git a/Adafruit_NFCShield_I2C.h b/Adafruit_NFCShield_I2C.h
+index f3a0f12..fde9997 100644
+--- a/Adafruit_NFCShield_I2C.h
++++ b/Adafruit_NFCShield_I2C.h
+@@ -188,6 +188,9 @@ class Adafruit_NFCShield_I2C{
+   static void PrintHex(const byte * data, const uint32_t numBytes);
+   static void PrintHexChar(const byte * pbtData, const uint32_t numBytes);
+ 
++  uint8_t sendRawCommandCheckAck(uint8_t *raw, uint8_t rawlen, uint16_t timeout = 1000);
++  void readRawCommandAnswer();
++
+  private:
+   uint8_t _irq, _reset;
+   uint8_t _uid[7];  // ISO14443A uid

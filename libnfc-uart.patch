@@ -1,0 +1,39 @@
+diff --git a/libnfc/buses/uart.c b/libnfc/buses/uart.c
+index 0c6227b..d5ab6fc 100644
+--- a/libnfc/buses/uart.c
++++ b/libnfc/buses/uart.c
+@@ -194,6 +194,9 @@ uart_set_speed(serial_port sp, const uint32_t uiPortSpeed)
+     case 38400:
+       stPortSpeed = B38400;
+       break;
++    case 921600:
++      stPortSpeed = B921600;
++      break;
+ #  ifdef B57600
+     case 57600:
+       stPortSpeed = B57600;
+diff --git a/libnfc/chips/pn53x.c b/libnfc/chips/pn53x.c
+index 2243278..a31584b 100644
+--- a/libnfc/chips/pn53x.c
++++ b/libnfc/chips/pn53x.c
+@@ -1023,6 +1023,7 @@ pn53x_check_communication(struct nfc_device *pnd)
+   size_t szRx = sizeof(abtRx);
+   int res = 0;
+ 
++  sleep(2);
+   if ((res = pn53x_transceive(pnd, abtCmd, sizeof(abtCmd), abtRx, szRx, 500)) < 0)
+     return res;
+   szRx = (size_t) res;
+diff --git a/libnfc/drivers/pn532_uart.c b/libnfc/drivers/pn532_uart.c
+index d89b5f4..988a11c 100644
+--- a/libnfc/drivers/pn532_uart.c
++++ b/libnfc/drivers/pn532_uart.c
+@@ -48,7 +48,7 @@
+ #include "chips/pn53x-internal.h"
+ #include "uart.h"
+ 
+-#define PN532_UART_DEFAULT_SPEED 115200
++#define PN532_UART_DEFAULT_SPEED 921600
+ #define PN532_UART_DRIVER_NAME "pn532_uart"
+ 
+ #define LOG_CATEGORY "libnfc.driver.pn532_uart"
